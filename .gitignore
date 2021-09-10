@@ -1,0 +1,4 @@
+*.retry
+.idea
+hosts
+vars/default.yml
