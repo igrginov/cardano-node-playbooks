@@ -1,0 +1,12 @@
+create_user: REPLACE_WITH_YOUR_USER
+copy_local_key: "{{ lookup('file', lookup('env','HOME') + '/.ssh/id_rsa.pub') }}"
+sys_packages: [ 'curl', 'vim', 'git', 'ufw', 'zsh' ]
+
+build_version: "123456789"
+cardano_node_linux_version: "1.29.0"
+cardano_node_linux_exec: "https://hydra.iohk.io/build/{{ build_version }}/download/1/cardano-node-{{ cardano_node_linux_version }}-linux.tar.gz"
+testnet_config_url: "https://hydra.iohk.io/build/{{ build_version }}/download/1/testnet-config.json"
+testnet_byron_genesis_url: "https://hydra.iohk.io/build/{{ build_version }}/download/1/testnet-byron-genesis.json"
+testnet_shelly_genesis_url: "https://hydra.iohk.io/build/{{ build_version }}/download/1/testnet-shelley-genesis.json"
+testnet_alonzo_genesis_url: "https://hydra.iohk.io/build/{{ build_version }}/download/1/testnet-alonzo-genesis.json"
+testnet_topology_url: "https://hydra.iohk.io/build/{{ build_version }}/download/1/testnet-topology.json"
