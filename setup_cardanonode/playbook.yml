@@ -1,0 +1,155 @@
+#################################################
+# DO Community Playbooks: Initial Server Setup
+#################################################
+---
+- hosts: all
+  become: true
+  vars_files:
+    - ../vars/global.yml
+
+  tasks:
+    - name: Set user home
+      shell: pwd
+      register: userhome
+
+    - name: Set user bashrc
+      shell: "echo {{ userhome.stdout }}/.bashrc"
+      register: bashrcpath
+
+    - name: Set run testnet script path
+      shell: "echo {{ userhome.stdout }}/cardano-node/run_testnet.sh"
+      register: run_testnet_path
+
+    - name: Set testnet-pipe path
+      shell: "echo {{ userhome.stdout }}/cardano-node/testnet-pipe"
+      register: testnet_pipe_path
+
+    - name: Download cardano-node
+      ansible.builtin.unarchive:
+        src: "{{ cardano_node_linux_exec }}"
+        dest: "/bin"
+        remote_src: yes
+
+    - name: Check Cardano Node version
+      command: cardano-node --version
+      register: cardanoNodeVersion
+
+    # Setup testenet
+    - name: Create cardano-node folder (testnet)
+      file:
+        path: "{{ userhome.stdout }}/cardano-node/node-ipc/testnet"
+        owner: "{{ create_user }}"
+        group: "{{ create_user }}"
+        state: directory
+
+    - name: Create cardano-node db folder (testnet)
+      file:
+        path: "{{ userhome.stdout }}/cardano-node/db/testnet"
+        owner: "{{ create_user }}"
+        group: "{{ create_user }}"
+        state: directory
+
+    - name: Add run testnet script
+      blockinfile:
+        create: yes
+        owner: "{{ create_user }}"
+        group: "{{ create_user }}"
+        mode: '0770'
+        dest: "{{ run_testnet_path.stdout }}"
+        content: "cardano-node run \
+          --config ~/cardano-node/config/testnet/testnet-config.json \
+          --topology ~/cardano-node/config/testnet/testnet-topology.json \
+          --database-path ~/cardano-node/db/testnet \
+          --socket-path ~/cardano-node/node-ipc/testnet/node.socket \
+          --port 3101"
+
+    - name: Create testnet pipe
+      shell: "mkfifo {{ testnet_pipe_path.stdout }}"
+
+    - name: Update testnet pipe permissions
+      file:
+        path: "{{ testnet_pipe_path.stdout }}"
+        owner: "{{ create_user }}"
+        group: "{{ create_user }}"
+
+    - name: Add NODE_SOCKET env variable (testnet)
+      lineinfile:
+        path: "{{ bashrcpath.stdout }}"
+        line: export CARDANO_NODE_SOCKET_PATH_TESTNET="{{ userhome.stdout }}/cardano-node/node-ipc/testnet/node.socket"
+        insertafter: EOF
+
+    # Setup testnet
+    - name: Setup testnet config
+      file:
+        path: "{{ userhome.stdout }}/cardano-node/config/testnet"
+        owner: "{{ create_user }}"
+        group: "{{ create_user }}"
+        state: directory
+
+    # Get testnet config files
+    - name: Fetch testnet config
+      get_url:
+        url: "{{ testnet_config_url }}"
+        dest: "{{ userhome.stdout }}/cardano-node/config/testnet/testnet-config.json"
+        mode: '0660'
+        owner: "{{ create_user }}"
+        group: "{{ create_user }}"
+
+    # Get testnet config files
+    - name: Fetch byron-genesis config
+      get_url:
+        url: "{{ testnet_byron_genesis_url }}"
+        dest: "{{ userhome.stdout }}/cardano-node/config/testnet/testnet-byron-genesis.json"
+        mode: '0660'
+        owner: "{{ create_user }}"
+        group: "{{ create_user }}"
+
+    # Get testnet config files
+    - name: Fetch shelley-genesis config
+      get_url:
+        url: "{{ testnet_shelly_genesis_url }}"
+        dest: "{{ userhome.stdout }}/cardano-node/config/testnet/testnet-shelley-genesis.json"
+        mode: '0660'
+        owner: "{{ create_user }}"
+        group: "{{ create_user }}"
+
+    # Get testnet config files
+    - name: Fetch alonzo-genesis config
+      get_url:
+        url: "{{ testnet_alonzo_genesis_url }}"
+        dest: "{{ userhome.stdout }}/cardano-node/config/testnet/testnet-alonzo-genesis.json"
+        mode: '0660'
+        owner: "{{ create_user }}"
+        group: "{{ create_user }}"
+
+    # Get testnet config files
+    - name: Fetch topology
+      get_url:
+        url: "{{ testnet_topology_url }}"
+        dest: "{{ userhome.stdout }}/cardano-node/config/testnet/testnet-topology.json"
+        mode: '0660'
+        owner: "{{ create_user }}"
+        group: "{{ create_user }}"
+
+    # Setup mainnet
+    - name: Create cardano-node folder (mainnet)
+      file:
+        path: "{{ userhome.stdout }}/cardano-node/node-ipc/mainnet"
+        owner: "{{ create_user }}"
+        group: "{{ create_user }}"
+        state: directory
+
+    - name: Add NODE_SOCKET env variable (mainnet)
+      lineinfile:
+        path: "{{ bashrcpath.stdout }}"
+        line: export CARDANO_NODE_SOCKET_PATH_MAINNET="{{ userhome.stdout }}/cardano-node/node-ipc/mainnet/node.socket"
+        insertafter: EOF
+
+    # - debug:
+    #     msg: "Cardano node version: {{ cardanoNodeVersion.stdout }}"
+
+    - name: Output some variables
+      shell: testnet="testnet-magic 1097911063"
+
+    - debug:
+        msg: "Output $testnet variable"

@@ -2,3 +2,4 @@
 .idea
 hosts
 vars/default.yml
+vars/global.yml
